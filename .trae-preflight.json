@@ -1,0 +1,15 @@
+{
+  "repo_id": "wangxt-855-1",
+  "folder": "/Users/mingyuan/workspace/sihuo/wangxtw3/855",
+  "prepared_at": "2026-06-05T03:02:04.753254+00:00",
+  "ports": {
+    "APP_PORT": 18155,
+    "API_PORT": 19155,
+    "WEB_PORT": 20155,
+    "DB_PORT": 21155,
+    "REDIS_PORT": 22155
+  },
+  "compose_project_name": "wangxt_855_1",
+  "smoke_command": "bash scripts/smoke.sh",
+  "destructive_cleanup": false
+}
