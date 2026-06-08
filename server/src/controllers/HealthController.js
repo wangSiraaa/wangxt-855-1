@@ -1,8 +1,42 @@
+const fs = require('fs');
+const path = require('path');
 const { getDB } = require('../utils/db');
 
 class HealthController {
   static async check(req, res) {
     try {
+      const dbPath = path.join(__dirname, '../../data/bank_confirmation.db');
+      
+      const dbExists = fs.existsSync(dbPath);
+      
+      if (!dbExists) {
+        const health = {
+          status: 'unhealthy',
+          timestamp: new Date().toISOString(),
+          uptime: process.uptime(),
+          services: {
+            database: {
+              status: 'down',
+              healthy: false,
+              error: '数据库文件不存在，健康检查需连上数据库'
+            },
+            api: {
+              status: 'up'
+            }
+          },
+          environment: {
+            node_env: process.env.NODE_ENV || 'development',
+            port: process.env.PORT || 3001
+          }
+        };
+        
+        return res.status(503).json({
+          success: false,
+          message: '健康检查需连上数据库',
+          data: health
+        });
+      }
+      
       const db = getDB();
 
       const dbCheck = await new Promise((resolve) => {
@@ -44,14 +78,14 @@ class HealthController {
 
       res.status(statusCode).json({
         success: dbCheck.healthy,
-        message: dbCheck.healthy ? '系统运行正常' : '数据库连接异常',
+        message: dbCheck.healthy ? '系统运行正常' : '健康检查需连上数据库',
         data: health
       });
     } catch (err) {
       console.error('健康检查失败:', err);
       res.status(503).json({
         success: false,
-        message: '健康检查失败',
+        message: '健康检查需连上数据库',
         error: err.message,
         data: {
           status: 'unhealthy',

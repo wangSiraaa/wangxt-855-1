@@ -17,6 +17,7 @@
     "init:db": "cd server && npm run init:db"
   },
   "devDependencies": {
+    "axios": "^1.17.0",
     "concurrently": "^8.2.2"
   }
 }

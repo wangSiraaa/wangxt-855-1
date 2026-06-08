@@ -5,10 +5,12 @@ export const STATUS_MAP = {
   authorization_rejected: { label: '授权不通过', color: '#F56C6C', step: 2 },
   processing: { label: '处理中', color: '#409EFF', step: 3 },
   processed: { label: '处理完成', color: '#67C23A', step: 3 },
-  review_pending: { label: '待复核', color: '#E6A23C', step: 4 },
-  review_rejected: { label: '复核不通过', color: '#F56C6C', step: 4 },
-  stamped: { label: '已盖章', color: '#67C23A', step: 5 },
-  archived: { label: '已归档', color: '#909399', step: 6 }
+  second_confirm_pending: { label: '待二次确认', color: '#E6A23C', step: 4 },
+  second_confirm_rejected: { label: '二次确认不通过', color: '#F56C6C', step: 4 },
+  review_pending: { label: '待复核', color: '#E6A23C', step: 5 },
+  review_rejected: { label: '复核不通过', color: '#F56C6C', step: 5 },
+  stamped: { label: '已盖章', color: '#67C23A', step: 6 },
+  archived: { label: '已归档', color: '#909399', step: 7 }
 };
 
 export const STEPS = [
@@ -16,6 +18,7 @@ export const STEPS = [
   { title: '提交', description: '提交并检查授权书' },
   { title: '授权审核', description: '审计客户确认授权' },
   { title: '银行处理', description: '银行经办录入账户明细和回函意见' },
+  { title: '二次确认', description: '复核经理二次确认处理结果' },
   { title: '差异复核', description: '复核经理审核回函意见' },
   { title: '电子盖章', description: '对通过审核的回函进行电子盖章' },
   { title: '下载归档', description: '下载已盖章的回函并归档' }

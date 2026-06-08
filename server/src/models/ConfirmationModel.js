@@ -7,9 +7,11 @@ const STATUS_FLOW = {
   authorization_pending: ['processing', 'authorization_rejected'],
   authorization_rejected: ['submitted'],
   processing: ['processed'],
-  processed: ['review_pending'],
+  processed: ['second_confirm_pending'],
+  second_confirm_pending: ['second_confirm_rejected', 'review_pending'],
+  second_confirm_rejected: ['processed'],
   review_pending: ['review_rejected', 'stamped'],
-  review_rejected: ['processed'],
+  review_rejected: ['second_confirm_pending'],
   stamped: ['archived'],
   archived: []
 };

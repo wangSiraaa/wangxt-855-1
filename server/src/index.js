@@ -13,6 +13,7 @@ const accountDetailRoutes = require('./routes/accountDetails');
 const replyOpinionRoutes = require('./routes/replyOpinions');
 const stampRecordRoutes = require('./routes/stampRecords');
 const masterDataRoutes = require('./routes/masterData');
+const todoTaskRoutes = require('./routes/todoTasks');
 
 const PORT = process.env.PORT || 3001;
 
@@ -40,7 +41,8 @@ app.get('/', (req, res) => {
       account_details: '/api/account-details',
       reply_opinions: '/api/reply-opinions',
       stamp_records: '/api/stamp-records',
-      master_data: '/api/master'
+      master_data: '/api/master',
+      todo_tasks: '/api/todo-tasks'
     }
   });
 });
@@ -53,6 +55,7 @@ app.use('/api/account-details', accountDetailRoutes);
 app.use('/api/reply-opinions', replyOpinionRoutes);
 app.use('/api/stamp-records', stampRecordRoutes);
 app.use('/api/master', masterDataRoutes);
+app.use('/api/todo-tasks', todoTaskRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

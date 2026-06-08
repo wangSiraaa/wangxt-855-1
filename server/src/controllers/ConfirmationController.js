@@ -4,6 +4,7 @@ const AuthorizationModel = require('../models/AuthorizationModel');
 const AccountDetailModel = require('../models/AccountDetailModel');
 const ReplyOpinionModel = require('../models/ReplyOpinionModel');
 const StampRecordModel = require('../models/StampRecordModel');
+const TodoTaskModel = require('../models/TodoTaskModel');
 const { all } = require('../utils/db');
 
 class ConfirmationController {
@@ -205,14 +206,14 @@ class ConfirmationController {
         });
       }
 
-      if (confirmation.status !== 'authorization_pending') {
+      if (confirmation.status !== 'authorization_pending' && confirmation.status !== 'second_confirm_rejected') {
         return res.status(400).json({
           success: false,
-          message: '只能处理待授权审核状态的询证函'
+          message: '只能处理待授权审核或二次确认被驳回的询证函'
         });
       }
 
-      await ConfirmationModel.updateStatus(id, 'processing', userId, '开始处理');
+      await ConfirmationModel.updateStatus(id, 'processing', userId, confirmation.status === 'second_confirm_rejected' ? '重新处理' : '开始处理');
 
       const updated = await ConfirmationModel.findById(id);
 
@@ -251,14 +252,26 @@ class ConfirmationController {
       }
 
       await ConfirmationModel.updateStatus(id, 'processed', userId, '处理完成');
-      await ConfirmationModel.updateStatus(id, 'review_pending', userId, '待复核');
+      await ConfirmationModel.updateStatus(id, 'second_confirm_pending', userId, '待二次确认');
+
+      const todoTask = await TodoTaskModel.create({
+        task_type: 'second_confirmation',
+        task_title: `二次确认 - ${confirmation.confirmation_no}`,
+        task_description: '银行经办已完成账户明细录入，需要复核经理进行二次确认后才能提交复核',
+        confirmation_id: id,
+        assignee_role: 'review_manager',
+        priority: 'high'
+      }, userId);
 
       const updated = await ConfirmationModel.findById(id);
 
       res.json({
         success: true,
-        message: '处理完成，等待复核',
-        data: updated
+        message: '处理完成，已生成二次确认待办任务',
+        data: {
+          confirmation: updated,
+          todo_task: todoTask
+        }
       });
     } catch (err) {
       console.error('完成处理失败:', err);

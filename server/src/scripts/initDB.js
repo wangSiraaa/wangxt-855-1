@@ -101,7 +101,8 @@ db.serialize(() => {
       content TEXT NOT NULL,
       status TEXT DEFAULT 'draft' CHECK(status IN (
         'draft', 'submitted', 'authorization_pending', 'authorization_rejected',
-        'processing', 'processed', 'review_pending', 'review_rejected',
+        'processing', 'processed', 'second_confirm_pending', 'second_confirm_rejected',
+        'review_pending', 'review_rejected',
         'stamped', 'archived'
       )),
       has_authorization INTEGER DEFAULT 0,
@@ -243,6 +244,34 @@ db.serialize(() => {
     else console.log('✓ archives表创建成功');
   });
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS todo_tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_type TEXT NOT NULL CHECK(task_type IN ('second_confirmation', 'review', 'authorization', 'stamp', 'archive')),
+      task_title TEXT NOT NULL,
+      task_description TEXT,
+      confirmation_id INTEGER NOT NULL,
+      assignee_role TEXT NOT NULL CHECK(assignee_role IN ('audit_firm', 'bank_clerk', 'review_manager', 'audit_client')),
+      assignee_id INTEGER,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'processing', 'completed', 'rejected', 'cancelled')),
+      priority TEXT DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high')),
+      due_date DATETIME,
+      completed_by INTEGER,
+      completed_at DATETIME,
+      completed_remark TEXT,
+      created_by INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (confirmation_id) REFERENCES confirmations(id) ON DELETE CASCADE,
+      FOREIGN KEY (assignee_id) REFERENCES users(id),
+      FOREIGN KEY (completed_by) REFERENCES users(id),
+      FOREIGN KEY (created_by) REFERENCES users(id)
+    )
+  `, (err) => {
+    if (err) console.error('创建todo_tasks表失败:', err);
+    else console.log('✓ todo_tasks表创建成功');
+  });
+
   console.log('');
   console.log('开始插入初始数据...');
 
@@ -304,6 +333,10 @@ db.serialize(() => {
     CREATE INDEX idx_stamp_records_confirmation ON stamp_records(confirmation_id);
     CREATE INDEX idx_confirmation_logs_confirmation ON confirmation_logs(confirmation_id);
     CREATE INDEX idx_archives_confirmation ON archives(confirmation_id);
+    CREATE INDEX idx_todo_tasks_confirmation ON todo_tasks(confirmation_id);
+    CREATE INDEX idx_todo_tasks_status ON todo_tasks(status);
+    CREATE INDEX idx_todo_tasks_assignee ON todo_tasks(assignee_id, assignee_role);
+    CREATE INDEX idx_todo_tasks_type ON todo_tasks(task_type);
   `, (err) => {
     if (err) console.error('创建索引失败:', err);
     else console.log('✓ 索引创建成功');

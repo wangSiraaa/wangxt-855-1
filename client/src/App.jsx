@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import ConfirmationListPage from './pages/ConfirmationListPage';
 import ConfirmationDetailPage from './pages/ConfirmationDetailPage';
 import ConfirmationCreatePage from './pages/ConfirmationCreatePage';
+import TodoTaskPage from './pages/TodoTaskPage';
 import AuditFirmDashboard from './pages/roles/AuditFirmDashboard';
 import BankClerkDashboard from './pages/roles/BankClerkDashboard';
 import ReviewManagerDashboard from './pages/roles/ReviewManagerDashboard';
@@ -88,6 +89,8 @@ function App() {
           </PrivateRoute>
         } />
         <Route path="confirmations/:id" element={<ConfirmationDetailPage />} />
+        
+        <Route path="todo-tasks" element={<TodoTaskPage />} />
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

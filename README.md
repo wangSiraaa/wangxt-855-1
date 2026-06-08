@@ -2,7 +2,40 @@
 
 ## 项目概述
 
-银行函证回函协同全栈Web应用，支持会计师事务所、银行经办、复核经理、审计客户等多角色协同工作。实现了从函证提交到归档的完整业务流程，前后端协同开发，确保数据一致性和用户体验。
+银行函证回函协同全栈Web应用，支持会计师事务所、银行经办、复核经理、审计客户等多角色协同工作。实现了从函证提交到归档的完整业务流程，包含**二次确认**机制确保处理准确性，前后端协同开发，确保数据一致性和用户体验。
+
+## 二次确认功能说明
+
+### 功能背景
+为确保银行回函处理的准确性，在银行经办完成账户明细录入后，需经过复核经理进行**二次确认**，确认通过后方可进入正式复核流程。
+
+### 业务流程
+```
+┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐
+│  银行处理   │ →  │ 处理完成   │ →  │ 二次确认   │ →  │  差异复核   │ →  │  电子盖章   │ →  │  下载归档   │
+└────────────┘    └────────────┘    └────────────┘    └────────────┘    └────────────┘    └────────────┘
+       ↓                ↓                ↓                ↓                ↓                ↓
+  processing        processed     second_confirm_   review_pending      stamped         archived
+                                   pending/
+                                   second_confirm_
+                                   rejected
+```
+
+### 状态流转
+- `processing` (处理中) → `processed` (处理完成)
+- `processed` → `second_confirm_pending` (待二次确认) **[新增]**
+- `second_confirm_pending` → `review_pending` (待复核) / `second_confirm_rejected` (二次确认被拒) **[新增]**
+- `second_confirm_rejected` → `processing` (重新处理) **[新增]**
+- `review_pending` → `stamped` (已盖章) / `review_rejected` (复核被拒)
+- `review_rejected` → `second_confirm_pending` (退回二次确认) **[修改]**
+- `stamped` → `archived` (已归档)
+
+### 待办任务机制
+当银行经办完成处理后，系统自动生成**二次确认待办任务**，分配给`review_manager`角色：
+1. 待办任务包含任务类型、优先级、关联函证信息
+2. 复核经理在"待办任务中心"查看并处理
+3. 处理完成后自动回写主单状态
+4. 驳回后主单回到`second_confirm_rejected`状态，银行经办可重新处理
 
 ## 技术栈
 
@@ -45,8 +78,8 @@
 | 角色 | 用户名 | 权限入口 | 主要功能 |
 |------|--------|----------|----------|
 | 会计师事务所 | audit_firm | 工作台、列表、创建、详情 | 创建询证函、上传授权书、提交函证、查看进度、下载归档 |
-| 银行经办 | bank_clerk | 工作台、列表、详情 | 录入账户明细、填写回函意见、处理函证 |
-| 复核经理 | review_manager | 工作台、列表、详情 | 差异复核、审批回函、电子盖章 |
+| 银行经办 | bank_clerk | 工作台、列表、详情 | 录入账户明细、填写回函意见、处理函证、重新处理被驳回的函证 |
+| 复核经理 | review_manager | 工作台、待办任务、列表、详情 | 差异复核、审批回函、电子盖章、**二次确认**、待办任务处理 |
 | 审计客户 | audit_client | 工作台、列表、详情 | 查看函证进度、确认授权 |
 
 ## 主业务流程
@@ -77,24 +110,16 @@
 - Node.js >= 16.x
 - npm >= 8.x
 
-### 1. 安装依赖
+### 启动命令
 
 ```bash
-# 安装所有依赖（根目录 + 后端 + 前端）
+# 1. 安装所有依赖（根目录 + 后端 + 前端）
 npm run install:all
-```
 
-### 2. 初始化数据库
-
-```bash
-# 创建数据库表并插入测试数据
+# 2. 初始化数据库（表结构 + 测试数据）
 npm run init:db
-```
 
-### 3. 启动开发环境
-
-```bash
-# 同时启动后端和前端
+# 3. 同时启动后端和前端开发服务
 npm run dev
 ```
 
@@ -102,6 +127,56 @@ npm run dev
 - **前端服务**: http://localhost:5173
 - **API文档**: http://localhost:3001/
 - **健康检查**: http://localhost:3001/api/health
+- **待办任务中心**: http://localhost:5173/todo-tasks
+
+### 启动验证
+1. 访问 http://localhost:5173 进入登录页面
+2. 使用测试账号登录（如 review_manager / 123456）
+3. 点击左侧菜单"待办任务"查看二次确认任务
+4. 点击"处理"按钮进行二次确认操作
+
+### 失败用例：健康检查数据库连接失败
+
+**场景描述**：验证当数据库连接异常时，健康检查接口返回明确的失败提示。
+
+**测试步骤**：
+1. 确保数据库文件不存在或数据库连接配置错误
+   ```bash
+   # 删除数据库文件模拟连接失败
+   rm -f server/database.db
+   ```
+2. 启动后端服务
+   ```bash
+   npm run dev:server
+   ```
+3. 调用健康检查接口
+   ```bash
+   curl http://localhost:3001/api/health
+   ```
+
+**预期结果**：
+- HTTP状态码：503（服务不可用）
+- 响应体：
+  ```json
+  {
+    "success": false,
+    "message": "健康检查需连上数据库",
+    "data": {
+      "status": "unhealthy",
+      "database": {
+        "healthy": false,
+        "error": "SQLITE_CANTOPEN: unable to open database file"
+      },
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+
+**验证点**：
+1. ✅ 返回 `success: false`
+2. ✅ 错误消息明确包含 `"健康检查需连上数据库"`
+3. ✅ database.healthy 为 `false`
+4. ✅ HTTP状态码为 `503`
 
 ### 4. 运行 Smoke 测试
 
@@ -142,9 +217,18 @@ npm run smoke
 | GET | `/api/confirmations/:id` | 获取询证函详情 | 所有登录用户 |
 | POST | `/api/confirmations/:id/submit` | 提交询证函 | audit_firm |
 | POST | `/api/confirmations/:id/process` | 开始处理 | bank_clerk |
-| POST | `/api/confirmations/:id/finish` | 完成处理 | bank_clerk |
+| POST | `/api/confirmations/:id/finish` | 完成处理（进入二次确认） | bank_clerk |
+| POST | `/api/confirmations/:id/reprocess` | 重新处理（二次确认被驳回后） | bank_clerk |
 | POST | `/api/confirmations/:id/review` | 复核审批 | review_manager |
 | POST | `/api/confirmations/:id/archive` | 归档 | audit_firm |
+
+### 待办任务接口
+| 方法 | 路径 | 说明 | 权限 |
+|------|------|------|------|
+| POST | `/api/todo-tasks` | 创建待办任务 | 所有登录用户 |
+| GET | `/api/todo-tasks/my` | 获取我的待办任务列表 | 所有登录用户 |
+| GET | `/api/todo-tasks/:id` | 获取待办任务详情 | 所有登录用户 |
+| POST | `/api/todo-tasks/:id/second-confirm` | 处理二次确认（通过/驳回） | review_manager |
 
 ### 授权书接口
 | 方法 | 路径 | 说明 |
@@ -209,12 +293,14 @@ npm run smoke
 │   │   │   ├── DashboardPage.jsx
 │   │   │   ├── ConfirmationListPage.jsx
 │   │   │   ├── ConfirmationDetailPage.jsx
-│   │   │   └── ConfirmationCreatePage.jsx
+│   │   │   ├── ConfirmationCreatePage.jsx
+│   │   │   └── TodoTaskPage.jsx  # 待办任务页面（二次确认）
 │   │   ├── services/            # API 服务
 │   │   │   └── api.js           # Axios 实例 + 各模块 API
 │   │   ├── contexts/            # React Context
 │   │   │   └── AuthContext.jsx  # 认证上下文
 │   │   └── utils/               # 工具函数
+│   │       └── constants.js     # 常量定义（状态、步骤）
 │   ├── index.html
 │   ├── vite.config.js           # Vite 配置（代理 /api 到后端）
 │   └── package.json
@@ -225,10 +311,14 @@ npm run smoke
 │   │   │   ├── AuthorizationModel.js
 │   │   │   ├── AccountDetailModel.js
 │   │   │   ├── ReplyOpinionModel.js
-│   │   │   └── StampRecordModel.js
+│   │   │   ├── StampRecordModel.js
+│   │   │   └── TodoTaskModel.js   # 待办任务数据模型
 │   │   ├── routes/              # API 路由
+│   │   │   └── todoTasks.js       # 待办任务路由
 │   │   ├── middleware/          # 中间件（认证、权限）
 │   │   ├── controllers/         # 业务逻辑控制器
+│   │   │   ├── TodoTaskController.js # 待办任务控制器
+│   │   │   └── HealthController.js # 健康检查控制器
 │   │   ├── utils/               # 工具函数
 │   │   │   └── db.js            # 数据库单例连接
 │   │   ├── scripts/

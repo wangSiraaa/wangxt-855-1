@@ -101,4 +101,14 @@ export const masterDataAPI = {
   getStatusMap: () => api.get('/master/status-map')
 };
 
+export const todoTaskAPI = {
+  list: (params) => api.get('/todo-tasks', { params }),
+  getById: (id) => api.get(`/todo-tasks/${id}`),
+  create: (data) => api.post('/todo-tasks', data),
+  myTasks: (params) => api.get('/todo-tasks/my', { params }),
+  getStats: () => api.get('/todo-tasks/stats'),
+  secondConfirm: (id, data) => api.post(`/todo-tasks/${id}/second-confirm`, data),
+  delete: (id) => api.delete(`/todo-tasks/${id}`)
+};
+
 export default api;

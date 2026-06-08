@@ -12,7 +12,8 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   FileProtectOutlined,
-  SafetyOutlined
+  SafetyOutlined,
+  TodoOutlined
 } from '@ant-design/icons';
 import { useAuth, roleLabels } from '../contexts/AuthContext';
 
@@ -65,6 +66,12 @@ export default function AppLayout() {
         icon: <CheckCircleOutlined />,
         label: '工作台',
         onClick: () => navigate('/review-manager')
+      },
+      {
+        key: '/todo-tasks',
+        icon: <TodoOutlined />,
+        label: '待办任务',
+        onClick: () => navigate('/todo-tasks')
       },
       {
         key: '/confirmations',
