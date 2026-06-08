@@ -71,6 +71,10 @@ export default function ConfirmationCreatePage() {
   const handleSave = async (values, submitAfter = false) => {
     const payload = {
       ...values,
+      firm_id: user?.id,
+      audit_period: values.audit_period || '2024年度',
+      content: values.content || `请确认该账户截至${values.as_of_date?.format('YYYY-MM-DD')}的余额是否正确。`,
+      has_authorization: false,
       confirmation_date: values.confirmation_date?.format('YYYY-MM-DD'),
       as_of_date: values.as_of_date?.format('YYYY-MM-DD')
     };

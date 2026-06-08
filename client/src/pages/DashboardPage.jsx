@@ -166,8 +166,8 @@ export default function DashboardPage() {
                   </div>
                   {healthInfo.database && (
                     <div style={{ padding: '8px 12px', background: '#f5f7fa', borderRadius: 6, fontSize: 12 }}>
-                      <div>版本: {healthInfo.database.version || 'SQLite 3.x</div>
-                      <div>位置: {healthInfo.database.path || '本地数据库</div>
+                      <div>版本: {healthInfo.database.version || 'SQLite 3.x'}</div>
+                      <div>位置: {healthInfo.database.path || '本地数据库'}</div>
                     </div>
                   )}
                 </div>
