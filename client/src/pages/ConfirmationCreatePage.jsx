@@ -204,7 +204,7 @@ export default function ConfirmationCreatePage() {
                 >
                   {clients.map(client => (
                     <Option key={client.id} value={client.id}>
-                      {client.client_name}
+                      {client.name}
                     </Option>
                   ))}
                 </Select>
@@ -224,7 +224,7 @@ export default function ConfirmationCreatePage() {
                 >
                   {accounts.map(account => (
                     <Option key={account.id} value={account.id}>
-                      {account.account_no} - {account.bank_name}
+                      {account.account_no} - {account.account_name} ({account.bank_name})
                     </Option>
                   ))}
                 </Select>
@@ -242,7 +242,7 @@ export default function ConfirmationCreatePage() {
                 <Select placeholder="请选择银行" showSearch optionFilterProp="children">
                   {banks.map(bank => (
                     <Option key={bank.id} value={bank.id}>
-                      {bank.bank_name}
+                      {bank.name} - {bank.branch}
                     </Option>
                   ))}
                 </Select>
